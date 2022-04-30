@@ -142,6 +142,7 @@ impl Column {
             Self::HardLinks  |
             Self::Inode      |
             Self::Blocks     |
+            Self::Timestamp(_) | 
             Self::GitStatus  => Alignment::Right,
             _                => Alignment::Left,
         }
