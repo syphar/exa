@@ -57,23 +57,23 @@ pub enum TimeFormat {
 // timestamps are separate types.
 
 impl TimeFormat {
-    pub fn format_local(self, time: SystemTime) -> String {
+    pub fn format_local(self, time: SystemTime, locale: &str) -> String {
         match self {
             Self::DefaultFormat  => default_local(time),
             Self::ISOFormat      => iso_local(time),
             Self::LongISO        => long_local(time),
             Self::FullISO        => full_local(time),
-            Self::Relative       => relative(time),
+            Self::Relative       => relative(time, locale),
         }
     }
 
-    pub fn format_zoned(self, time: SystemTime, zone: &TimeZone) -> String {
+    pub fn format_zoned(self, time: SystemTime, zone: &TimeZone, locale: &str) -> String {
         match self {
             Self::DefaultFormat  => default_zoned(time, zone),
             Self::ISOFormat      => iso_zoned(time, zone),
             Self::LongISO        => long_zoned(time, zone),
             Self::FullISO        => full_zoned(time, zone),
-            Self::Relative       => relative(time),
+            Self::Relative       => relative(time, locale),
         }
     }
 }
@@ -121,17 +121,21 @@ fn long_zoned(time: SystemTime, zone: &TimeZone) -> String {
 }
 
 #[allow(trivial_numeric_casts)]
-fn relative(time: SystemTime) -> String {
-    timeago::Formatter::new()
+fn relative(time: SystemTime, locale: &str) -> String {
+    let language = timeago::from_isolang(
+        timeago::languages::IsolangLanguage::from_639_1(locale).unwrap_or_default(),
+    )
+    .unwrap_or_else(|| timeago::languages::boxup(timeago::English));
+
+    timeago::Formatter::with_language(language)
         .ago("")
-        .convert(
-            Duration::from_secs(
-                max(0, Instant::now().seconds() - systemtime_epoch(time))
-                // this .unwrap is safe since the call above can never result in a 
+        .convert(Duration::from_secs(
+            max(0, Instant::now().seconds() - systemtime_epoch(time))
+                // this .unwrap is safe since the call above can never result in a
                 // value < 0
-                .try_into().unwrap()
-            )
-        )
+                .try_into()
+                .unwrap(),
+        ))
 }
 
 #[allow(trivial_numeric_casts)]

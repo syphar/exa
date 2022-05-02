@@ -274,6 +274,8 @@ pub struct Environment {
     /// offset files’ timestamps.
     tz: Option<TimeZone>,
 
+    locale: String,
+
     /// Mapping cache of user IDs to usernames.
     users: Mutex<UsersCache>,
 }
@@ -297,9 +299,11 @@ impl Environment {
         let numeric = locale::Numeric::load_user_locale()
                              .unwrap_or_else(|_| locale::Numeric::english());
 
+        let locale = sys_locale::get_locale().unwrap_or_else(|| String::from("en-US"));
+
         let users = Mutex::new(UsersCache::new());
 
-        Self { numeric, tz, users }
+        Self { numeric, tz, locale, users }
     }
 }
 
@@ -431,16 +435,16 @@ impl<'a, 'f> Table<'a> {
             }
 
             Column::Timestamp(TimeType::Modified)  => {
-                file.modified_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
+                file.modified_time().render(self.theme.ui.date, &self.env.tz, &self.env.locale, self.time_format)
             }
             Column::Timestamp(TimeType::Changed)   => {
-                file.changed_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
+                file.changed_time().render(self.theme.ui.date, &self.env.tz, &self.env.locale, self.time_format)
             }
             Column::Timestamp(TimeType::Created)   => {
-                file.created_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
+                file.created_time().render(self.theme.ui.date, &self.env.tz, &self.env.locale, self.time_format)
             }
             Column::Timestamp(TimeType::Accessed)  => {
-                file.accessed_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
+                file.accessed_time().render(self.theme.ui.date, &self.env.tz, &self.env.locale, self.time_format)
             }
         }
     }
